@@ -57,7 +57,10 @@ export function fitKoopman(data, reg = 1e-4) {
     for (let k = 0; k < G_now.length; k++) s += G_now[k][i] * G_next[k][j];
     return s;
   }));
-  const K = solveLinear(GtG, GtGn, d);
+  // solveLinear(GtG, GtGn) returns M where GtG·M = GtGn, i.e. M = K_true^T.
+  // Transpose so K = K_true and propagate can apply K·g correctly.
+  const Kraw = solveLinear(GtG, GtGn, d);
+  const K = Array.from({length: d}, (_, i) => Kraw.map(row => row[i]));
   let residSumSq = 0;
   for (let t = 0; t < G_now.length; t++) {
     const pred = K[0].reduce((s, v, j) => s + v * G_now[t][j], 0);
