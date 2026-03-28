@@ -6,6 +6,7 @@ import ForecastTab from "./components/tabs/ForecastTab.jsx";
 import CompareTab from "./components/tabs/CompareTab.jsx";
 import ScenarioTab from "./components/tabs/ScenarioTab.jsx";
 import FuelTab from "./components/tabs/FuelTab.jsx";
+import AnomalyTab from "./components/tabs/AnomalyTab.jsx";
 
 export default function App() {
   const [lane, setLane] = useState("DAL-LAX");
@@ -162,7 +163,7 @@ export default function App() {
       <div style={{ borderBottom: "1px solid #21262d", padding: "16px 28px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#2ea043", boxShadow: "0 0 8px #2ea043" }} />
-          <span style={{ fontFamily: "'IBM Plex Sans', sans-serif", fontWeight: 600, fontSize: 14, color: "#e6edf3", letterSpacing: 2 }}>FREIGHTIQ</span>
+          <span style={{ fontFamily: "'IBM Plex Sans', sans-serif", fontWeight: 600, fontSize: 14, color: "#e6edf3", letterSpacing: 2 }}>RATESENTINEL</span>
           <span style={{ color: "#484f58", fontSize: 11 }}>|</span>
           <span style={{ color: "#8b949e", fontSize: 11 }}>KOOPMAN RATE ENGINE</span>
           <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
@@ -262,6 +263,7 @@ export default function App() {
               { id: "compare",  label: "COMPARE LANES" },
               { id: "scenario", label: "SCENARIO" },
               { id: "fuel",     label: "FUEL IMPACT" },
+              { id: "anomaly",  label: "ANOMALY" },
             ].map(t => (
               <button key={t.id} className={`tab-btn ${activeTab === t.id ? "active" : ""}`} onClick={() => setActiveTab(t.id)}>{t.label}</button>
             ))}
@@ -279,6 +281,9 @@ export default function App() {
             )}
             {activeTab === "fuel" && (
               <FuelTab model={model} state={state} horizon={horizon} margin={margin} quote={quote} />
+            )}
+            {activeTab === "anomaly" && (
+              <AnomalyTab lane={lane} state={state} horizon={horizon} margin={margin} backendUrl={apiConfig.backendUrl} />
             )}
           </div>
         </div>

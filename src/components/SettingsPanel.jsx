@@ -39,6 +39,14 @@ export default function SettingsPanel({ config, onChange, onClose, onTest, testS
         </div>
         <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 16, flex: 1 }}>
           <div style={sectionStyle}>
+            <div style={{ fontSize: 9, color: "#484f58", letterSpacing: 2, marginBottom: 12 }}>RATESENTINEL BACKEND</div>
+            <div>
+              <label style={labelStyle}>Backend URL (Railway)</label>
+              <input style={inputStyle} placeholder="https://your-app.railway.app" value={draft.backendUrl || ""} onChange={e => set("backendUrl", e.target.value)} />
+              <div style={{ fontSize: 9, color: "#484f58", marginTop: 4 }}>Used by the Anomaly tab to call POST /api/anomaly</div>
+            </div>
+          </div>
+          <div style={sectionStyle}>
             <div style={{ fontSize: 9, color: "#484f58", letterSpacing: 2, marginBottom: 12 }}>AUTHENTICATION</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <div>

@@ -21,6 +21,7 @@ export const STATE_FIELDS = [
 ];
 
 export const DEFAULT_API_CONFIG = {
+  backendUrl: "",
   marketStateUrl: "", historicalUrl: "", apiKey: "",
   apiKeyHeader: "Authorization", apiKeyPrefix: "Bearer ", laneParam: "lane",
   marketEnabled: false, historicalEnabled: false,
