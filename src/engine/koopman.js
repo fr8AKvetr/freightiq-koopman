@@ -28,8 +28,10 @@ export function generateData(nDays = 365, baseRate = 2.4, seed = 42) {
     noise = 0.7*noise + randn()*0.03;
     let shockSignal = 0, daysSince = 999;
     shockDays.forEach(sd => {
-      shockSignal += 0.2 * Math.exp(-Math.max(d - sd, 0) / 14);
-      if (d >= sd) daysSince = Math.min(daysSince, d - sd);
+      if (d >= sd) {
+        shockSignal += 0.2 * Math.exp(-(d - sd) / 14);
+        daysSince = Math.min(daysSince, d - sd);
+      }
     });
     const cap_util = Math.max(0.4, Math.min(0.98, 0.72 + 0.12*Math.sin(2*Math.PI*d/365) + randn()*0.04));
     const spot_rate = Math.max(1.2, baseRate + seasonal + 0.08*(ltr-3) + 0.15*(fuel-1) + shockSignal + noise);
