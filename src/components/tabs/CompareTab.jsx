@@ -4,7 +4,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import Sparkline from "../Sparkline.jsx";
-import { LANES, MODE_COLORS, TOOLTIP_STYLE } from "../../constants.js";
+import { LANES, TOOLTIP_STYLE } from "../../constants.js";
 import { generateData, fitKoopman, runFromState } from "../../engine/koopman.js";
 
 export default function CompareTab({ state, horizon, margin, lane }) {
@@ -16,17 +16,10 @@ export default function CompareTab({ state, horizon, margin, lane }) {
     const results = await Promise.all(LANES.map(l => new Promise(resolve => setTimeout(() => {
       const data = generateData(365, 2.4, l.charCodeAt(0) + l.charCodeAt(4));
       const m = fitKoopman(data.slice(0, 180));
-      const { points, pt, g0 } = runFromState(m, state, horizon, margin);
-      const modeNames = ["Seasonal","Capacity Cycle","Fuel Pass-Through","Demand Shock","Contract Drift"];
-      const contribs = modeNames.map((name, idx) => {
-        const rowI = m.K[idx] || m.K[0];
-        return { name, value: rowI.reduce((s, v, j) => s + v * g0[j], 0) * m.std[0] * (0.5 / (idx+1)) };
-      });
-      const dominant = contribs.reduce((a, b) => Math.abs(a.value) > Math.abs(b.value) ? a : b);
+      const { points, pt } = runFromState(m, state, horizon, margin);
       const h = Math.min(horizon, 14);
-      const conf = Math.max(0, 1 - (m.residStd * m.std[0] * Math.sqrt(h)) / Math.max(pt.rate, 0.01) * 2);
       const trend = points[h].rate - points[0].rate;
-      resolve({ lane: l, rate: pt.rate, low: pt.low, high: pt.high, confidence: +conf.toFixed(3), dominant: dominant.name, trend, points });
+      resolve({ lane: l, rate: pt.rate, low: pt.low, high: pt.high, trend, points });
     }, 0))));
     setCompareData(results);
     setComparing(false);
@@ -37,7 +30,7 @@ export default function CompareTab({ state, horizon, margin, lane }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <div style={{ fontSize: 9, color: "#484f58", letterSpacing: 2 }}>LANE RATE COMPARISON  ·  {horizon}d FORWARD</div>
-          <div style={{ fontSize: 10, color: "#8b949e", marginTop: 4 }}>Runs Koopman independently per lane using current market state vector</div>
+          <div style={{ fontSize: 10, color: "#8b949e", marginTop: 4 }}>Generated training data for every lane, even with external inputs enabled. Research only; uncalibrated residual envelopes.</div>
         </div>
         <button className="compare-run-btn" onClick={runCompare} disabled={comparing}>
           {comparing ? "COMPUTING ALL LANES..." : "▶  RUN ALL LANES"}
@@ -55,7 +48,7 @@ export default function CompareTab({ state, horizon, margin, lane }) {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid #21262d" }}>
-                {["LANE", "QUOTED RATE", "RANGE", "CONFIDENCE", "DOMINANT MODE", "TREND", "TRAJECTORY"].map(h => (
+                {["LANE", "RESEARCH RATE", "RESIDUAL ENVELOPE", "TREND", "TRAJECTORY"].map(h => (
                   <th key={h} style={{ fontSize: 9, color: "#484f58", letterSpacing: 1.5, padding: "10px 16px", textAlign: "left", fontWeight: 500 }}>{h}</th>
                 ))}
               </tr>
@@ -74,14 +67,6 @@ export default function CompareTab({ state, horizon, margin, lane }) {
                     <span style={{ fontSize: 10, color: "#58a6ff" }}>${row.low.toFixed(3)}</span>
                     <span style={{ fontSize: 9, color: "#484f58", margin: "0 4px" }}>–</span>
                     <span style={{ fontSize: 10, color: "#58a6ff" }}>${row.high.toFixed(3)}</span>
-                  </td>
-                  <td style={{ padding: "12px 16px" }}>
-                    <span style={{ fontSize: 11, color: row.confidence > 0.7 ? "#2ea043" : row.confidence > 0.5 ? "#d29922" : "#f85149", fontWeight: 600 }}>
-                      {(row.confidence * 100).toFixed(0)}%
-                    </span>
-                  </td>
-                  <td style={{ padding: "12px 16px" }}>
-                    <span style={{ fontSize: 9, color: MODE_COLORS[row.dominant] || "#8b949e" }}>{row.dominant}</span>
                   </td>
                   <td style={{ padding: "12px 16px" }}>
                     <span style={{ fontSize: 11, color: row.trend > 0.01 ? "#f87171" : row.trend < -0.01 ? "#34d399" : "#8b949e", fontWeight: 600 }}>
