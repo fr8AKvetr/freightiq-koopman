@@ -7,9 +7,9 @@ const SCORE_COLOR = (score) => {
 };
 
 const SCORE_LABEL = (score) => {
-  if (score >= 0.85) return "CRITICAL";
-  if (score >= 0.6)  return "ELEVATED";
-  return "NORMAL";
+  if (score >= 0.85) return "LARGE MODEL DEVIATION";
+  if (score >= 0.6)  return "MODEL DEVIATION";
+  return "SMALL MODEL DEVIATION";
 };
 
 export default function AnomalyTab({ lane, state, horizon, margin, backendUrl }) {
@@ -50,10 +50,16 @@ export default function AnomalyTab({ lane, state, horizon, margin, backendUrl })
     }
   };
 
-  const exportSignal = () => {
+  const exportDiagnostic = () => {
     if (!result) return;
     const signal = {
-      signal_type: "rate_anomaly",
+      signal_type: "research_rate_comparison",
+      provenance: {
+        ...(result.provenance || { training_data: "unknown" }),
+        intended_use: "research_only",
+        operational_signal_eligible: false,
+        carrier_fraud_inference_permitted: false,
+      },
       lane: result.lane,
       carrier_dot: result.carrier_dot,
       carrier_rate: parseFloat(carrierRate),
@@ -74,9 +80,9 @@ export default function AnomalyTab({ lane, state, horizon, margin, backendUrl })
 
       {/* Header */}
       <div>
-        <div style={{ fontSize: 9, color: "#484f58", letterSpacing: 2, marginBottom: 6 }}>CARRIER RATE ANOMALY DETECTION</div>
+        <div style={{ fontSize: 9, color: "#484f58", letterSpacing: 2, marginBottom: 6 }}>RESEARCH RATE COMPARISON</div>
         <div style={{ fontSize: 11, color: "#8b949e" }}>
-          Compare a carrier's quoted rate against the Koopman model forecast. Scores ≥ 0.85 indicate potential fraud or double-brokering.
+          Compare an entered rate with a generated-model projection. Scores describe only model deviation; they cannot indicate fraud or double-brokering. Missing provenance is untrusted.
         </div>
       </div>
 
@@ -152,9 +158,9 @@ export default function AnomalyTab({ lane, state, horizon, margin, backendUrl })
             display: "flex", alignItems: "center", justifyContent: "space-between",
           }}>
             <div>
-              <div style={{ fontSize: 9, color: "#484f58", letterSpacing: 2, marginBottom: 6 }}>ANOMALY VERDICT</div>
+              <div style={{ fontSize: 9, color: "#484f58", letterSpacing: 2, marginBottom: 6 }}>RESEARCH COMPARISON</div>
               <div style={{ fontSize: 22, fontWeight: 600, color: result.is_anomalous ? "#f85149" : "#2ea043" }}>
-                {result.is_anomalous ? "⚠ ANOMALOUS" : "✓ NORMAL"}
+                {result.is_anomalous ? "OUTSIDE MODEL THRESHOLD" : "WITHIN MODEL THRESHOLD"}
               </div>
               <div style={{ fontSize: 10, color: "#8b949e", marginTop: 4 }}>
                 DOT #{result.carrier_dot} · {result.lane}
@@ -190,16 +196,16 @@ export default function AnomalyTab({ lane, state, horizon, margin, backendUrl })
           {result.is_anomalous && (
             <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
               <button
-                onClick={exportSignal}
+                onClick={exportDiagnostic}
                 style={{
                   background: "#1a0d00", border: "1px solid #d29922", color: "#d29922",
                   padding: "8px 18px", borderRadius: 4, cursor: "pointer",
                   fontFamily: "inherit", fontSize: 11, letterSpacing: 1,
                 }}
               >
-                {copied ? "✓ COPIED" : "⬆ EXPORT CARRIERSENTIAL SIGNAL"}
+                {copied ? "✓ COPIED" : "COPY RESEARCH DIAGNOSTIC"}
               </button>
-              <span style={{ fontSize: 10, color: "#484f58" }}>copies JSON to clipboard</span>
+              <span style={{ fontSize: 10, color: "#484f58" }}>copies research-only JSON; not a carrier signal</span>
             </div>
           )}
 

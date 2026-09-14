@@ -100,25 +100,18 @@ export default function App() {
       } catch (err) { setApiError(prev => prev ? `${prev}  ·  Historical API: ${err.message}` : `Historical API: ${err.message}`); }
     }
 
-    setDataSource(!liveMarket && !historicalData ? "SIMULATED" : liveMarket && historicalData ? "LIVE" : "PARTIAL");
+    setDataSource(historicalData ? "EXTERNAL HISTORY · UNVERIFIED" : liveMarket ? "SYNTHETIC TRAINING · MIXED STATE" : "SIMULATED");
     await new Promise(r => setTimeout(r, 50));
 
     const data = historicalData || generateData(365, 2.4, lane.charCodeAt(0) + lane.charCodeAt(4));
     const m = fitKoopman(data.slice(0, Math.min(data.length, 180)));
     setModel(m);
 
-    const { points, pt, g0 } = runFromState(m, currentState, horizon, margin);
+    const { points, pt } = runFromState(m, currentState, horizon, margin);
     setTrajectory(points);
 
     const h = Math.min(horizon, 14);
-    const modeNames = ["Seasonal","Capacity Cycle","Fuel Pass-Through","Demand Shock","Contract Drift"];
-    const contribs = modeNames.map((name, i) => {
-      const rowI = m.K[i] || m.K[0];
-      return { name, value: +(rowI.reduce((s, v, j) => s + v * g0[j], 0) * m.std[0] * (0.5 / (i+1))).toFixed(4) };
-    });
-    const dominant = contribs.reduce((a, b) => Math.abs(a.value) > Math.abs(b.value) ? a : b);
-    const conf = Math.max(0, 1 - (m.residStd * m.std[0] * Math.sqrt(h)) / Math.max(pt.rate, 0.01) * 2);
-    setQuote({ lane, horizon: h, rate: pt.rate, low: pt.low, high: pt.high, confidence: +conf.toFixed(3), dominant: dominant.name, contribs });
+    setQuote({ lane, horizon: h, rate: pt.rate, low: pt.low, high: pt.high });
     setFitting(false);
   }, [lane, horizon, margin, state, apiConfig, fetchFromApi, mapFields]);
 
@@ -181,6 +174,8 @@ export default function App() {
           <button className={`settings-btn${anyApiEnabled ? " active" : ""}`} onClick={() => setShowSettings(true)}>⚙ API</button>
         </div>
       </div>
+
+      <div style={{ padding: "10px 28px", color: "#d29922", fontSize: 11, lineHeight: 1.5 }}>Research only. Default training data and all lane comparisons are generated simulations. External inputs are unverified. Bands are uncalibrated residual envelopes; no confidence probability or causal attribution is available. Do not infer carrier fraud or use outputs as trusted carrier signals.</div>
 
       {apiError && (
         <div style={{ background: "#1a0a0a", borderBottom: "1px solid #3d1a1a", padding: "8px 28px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>

@@ -15,11 +15,13 @@ export function buildFeatures(s) {
   return f;
 }
 
-export function generateData(nDays = 365, baseRate = 2.4, seed = 42) {
+export function generateData(nDays = 365, baseRate = 2.4, seed = 42, scheduledShocks = null) {
   let rng = (() => { let s = seed; return () => { s = (s * 1664525 + 1013904223) & 0xffffffff; return (s >>> 0) / 0xffffffff; }; })();
   const randn = () => { let u=0,v=0; while(!u) u=rng(); while(!v) v=rng(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); };
   const days = Array.from({length: nDays}, (_, i) => i);
-  const shockDays = new Set(Array.from({length: 8}, () => Math.floor(rng() * nDays)));
+  // Consume default draws even with an explicit schedule, preserving identical noise.
+  const defaultShocks = Array.from({length: 8}, () => Math.floor(rng() * nDays));
+  const shockDays = new Set(scheduledShocks ?? defaultShocks);
   let fuel = 1.0, noise = 0;
   return days.map((d) => {
     const seasonal = 0.15*Math.sin(2*Math.PI*d/365+1.0) + 0.04*Math.sin(2*Math.PI*d/91) + 0.02*Math.sin(2*Math.PI*d/7);
@@ -28,8 +30,10 @@ export function generateData(nDays = 365, baseRate = 2.4, seed = 42) {
     noise = 0.7*noise + randn()*0.03;
     let shockSignal = 0, daysSince = 999;
     shockDays.forEach(sd => {
-      shockSignal += 0.2 * Math.exp(-Math.max(d - sd, 0) / 14);
-      if (d >= sd) daysSince = Math.min(daysSince, d - sd);
+      if (d >= sd) {
+        shockSignal += 0.2 * Math.exp(-(d - sd) / 14);
+        daysSince = Math.min(daysSince, d - sd);
+      }
     });
     const cap_util = Math.max(0.4, Math.min(0.98, 0.72 + 0.12*Math.sin(2*Math.PI*d/365) + randn()*0.04));
     const spot_rate = Math.max(1.2, baseRate + seasonal + 0.08*(ltr-3) + 0.15*(fuel-1) + shockSignal + noise);
